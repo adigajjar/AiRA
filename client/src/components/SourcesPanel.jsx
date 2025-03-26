@@ -77,7 +77,7 @@ const handleAddSources = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-gray bg-opacity-0 flex justify-center backdrop-blur-md items-center">
           <div className="bg-white p-5 rounded-lg shadow-lg w-xl">
             <h2 className="text-lg font-semibold mb-4">Select Files</h2>
             
