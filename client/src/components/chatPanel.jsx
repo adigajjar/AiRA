@@ -9,7 +9,7 @@ function ChatPanel({ messages, sendMessage, generateMindMap }) {
   const handleSend = async () => {
     if (input.trim() !== "") {
       try {
-        const res = await fetch("/ask_question", {
+        const res = await fetch("http://127.0.0.1:5000/api/ask_question", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: input }),
@@ -52,6 +52,48 @@ function ChatPanel({ messages, sendMessage, generateMindMap }) {
     }
   };
 
+  const parseResponse = (response) => {
+    if (!response) return null;
+  
+    // Define regex to match bold section titles
+    const sectionRegex = /\*\*(.*?)\*\*/g;
+    let parts = response.split(sectionRegex); // Split at bold markers
+  
+    let parsedContent = [];
+  
+    for (let i = 0; i < parts.length; i++) {
+      let text = parts[i].trim();
+  
+      if (text === "") continue;
+  
+      if (i % 2 === 1) {
+        // Bold section title
+        parsedContent.push(
+          <h3 key={i} className="font-semibold text-lg mt-3 text-black">{text}</h3>
+        );
+      } else {
+        // Normal text, handle bullet points
+        const lines = text.split("\n").map((line, index) => {
+          if (line.startsWith("* ") || line.startsWith("- ")) {
+            return (
+              <li key={index} className="ml-6 text-gray-800">{line.substring(2)}</li>
+            );
+          } else if (line.match(/^\d+\./)) {
+            return (
+              <li key={index} className="ml-6 text-gray-800">{line}</li>
+            );
+          } else {
+            return <p key={index} className="text-gray-700">{line}</p>;
+          }
+        });
+  
+        parsedContent.push(<div key={i}>{lines}</div>);
+      }
+    }
+  
+    return <div className="bg-green-100 p-4 rounded-lg shadow-md">{parsedContent}</div>;
+  };
+
   return (
     <div className="flex-1 p-4 bg-[#FFEBCD] shadow-md overflow-y-auto flex flex-col space-y-4">
 
@@ -67,7 +109,8 @@ function ChatPanel({ messages, sendMessage, generateMindMap }) {
           ))}
           {response && (
             <div className="bg-green-100 p-3 rounded-lg mb-2 shadow-md">
-              <strong>Response:</strong> {response}
+              <strong>Response:</strong>
+              <div>{parseResponse(response)}</div>
             </div>
           )}
         </div>
