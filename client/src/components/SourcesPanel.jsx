@@ -1,10 +1,19 @@
 import { useState } from "react";
 
-function SourcesPanel({ sources, addSource, toggleSource }) {
+function SourcesPanel({ toggleSource }) {
   const [showModal, setShowModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [url, setUrl] = useState("");
+  const [sources, setSources] = useState([]);
 
+  const addSource = (newSources) => {
+    setSources((prevSources) => {
+      const existingIds = new Set(prevSources.map((source) => source.id));
+      const filteredSources = newSources.filter((source) => !existingIds.has(source.id));
+      return [...prevSources, ...filteredSources];
+    });
+  };
+  
   // Open Modal
   const openModal = () => setShowModal(true);
   // Close Modal
@@ -14,14 +23,13 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
     setUrl("");
   };
 
-
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
 
-    // File size validation (max 5MB per file)
+    // File size validation (max 15MB per file)
     const validFiles = files.filter((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} is too large. Max size is 5MB.`);
+      if (file.size > 15 * 1024 * 1024) {
+        alert(`${file.name} is too large. Max size is 15MB.`);
         return false;
       }
       return true;
@@ -37,7 +45,7 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
     }
 
     const formData = new FormData();
-  
+
     selectedFiles.forEach((file) => {
       formData.append("files", file);
     });
@@ -47,14 +55,37 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/process_documents", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/process_documents",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        addSource(data.newSources); 
+
+        // Prepare new sources list
+        const newSources = [
+          ...selectedFiles.map((file) => ({
+            id: `${file.name}-${file.lastModified}`, // Unique ID for file
+            name: file.name,
+            selected: false,
+          })),
+          ...(url
+            ? [
+                {
+                  id: `url-${Date.now()}`,
+                  name: url,
+                  selected: false,
+                },
+              ]
+            : []),
+        ];
+
+        // Add new sources to the panel
+        addSource(newSources);
         alert(data.message);
         closeModal();
       } else {
@@ -71,12 +102,12 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
     <div
       className="w-1/5 shadow-md p-4 border-r border-gray-200"
       style={{
-        background: "linear-gradient(135deg, #fff5e1, #fceabb)", 
+        background: "linear-gradient(135deg, #fff5e1, #fceabb)",
         boxShadow: "rgba(0, 0, 0, 0.1) 0px 4px 12px",
-        borderWidth: "3px", 
+        borderWidth: "3px",
         borderStyle: "solid",
         borderImage: "linear-gradient(to right, blue, yellow)",
-        borderRightWidth: "5px", 
+        borderRightWidth: "5px",
       }}
     >
       <h2 className="text-lg font-semibold mb-4">Sources</h2>
@@ -99,7 +130,11 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
               onChange={() => toggleSource(source.id)}
               className="w-4 h-4"
             />
-            <span className={`text-sm ${source.selected ? "text-black" : "text-gray-500"}`}>
+            <span
+              className={`text-sm ${
+                source.selected ? "text-black" : "text-gray-500"
+              }`}
+            >
               {source.name}
             </span>
           </div>
@@ -108,10 +143,10 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center backdrop-blur-md">
+        <div className="fixed inset-0 bg-gray-500 flex opacity-96 justify-center items-center backdrop-blur-md">
           <div className="bg-white p-5 rounded-lg shadow-lg w-96">
             <h2 className="text-lg font-semibold mb-4">Select Files</h2>
-            
+
             {/* File Input */}
             <input
               type="file"
@@ -124,7 +159,10 @@ function SourcesPanel({ sources, addSource, toggleSource }) {
             {/* Selected Files List */}
             <ul className="mb-4">
               {selectedFiles.map((file) => (
-                <li key={`${file.name}-${file.lastModified}`} className="text-sm text-gray-600">
+                <li
+                  key={`${file.name}-${file.lastModified}`}
+                  className="text-sm text-gray-600"
+                >
                   📄 {file.name}
                 </li>
               ))}
