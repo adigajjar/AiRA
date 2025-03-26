@@ -9,6 +9,7 @@ import {
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Search from "./pages/Search";
+import Synthesis from "./pages/Synthesis";
 const Layout = () => {
   return (
     <>
@@ -30,6 +31,10 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: <Search />,
+      },
+      {
+        path: "/synthesis",
+        element: <Synthesis />,
       },
     ],
   },

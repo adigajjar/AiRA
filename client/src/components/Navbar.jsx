@@ -26,9 +26,11 @@ const Navbar = () => {
               Search
             </li>
           </Link>
-          <li className="text-black text-lg font-thin hover:text-gray-700 transition">
-            Synthesis
-          </li>
+          <Link to="/synthesis">
+            <li className="text-black text-lg font-thin hover:text-gray-700 transition">
+              Synthesis
+            </li>
+          </Link>
           <li className="text-black text-lg font-thin hover:text-gray-700 transition">
             Analyzer
           </li>
