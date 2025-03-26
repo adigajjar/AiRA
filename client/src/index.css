@@ -1,1 +1,6 @@
 @import "tailwindcss";
+@layer components {
+  .custom-box {
+    @apply rounded-[18px] bg-[linear-gradient(145deg,#e6d4b9,#fffbdb)] shadow-[20px_20px_39px_#eddbbf,-20px_-20px_39px_#fffbdb];
+  }
+}

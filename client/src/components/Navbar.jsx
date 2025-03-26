@@ -4,8 +4,6 @@ import electron from "../assets/electron.png";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <nav className="bg-[#FFEBCD] shadow-lg p-4 font-poppins backdrop-blur-md bg-opacity-90">
       <div className="container mx-auto flex justify-between items-center">
@@ -19,10 +17,7 @@ const Navbar = () => {
         </div>
         <ul className="hidden md:flex space-x-6 mx-10">
           <Link to="/">
-            <li
-              className="text-black text-lg font-thin hover:text-gray-700 transition"
-              s
-            >
+            <li className="text-black text-lg font-thin hover:text-gray-700 transition">
               Home
             </li>
           </Link>
@@ -38,15 +33,6 @@ const Navbar = () => {
             Analyzer
           </li>
         </ul>
-
-        {/* Mobile Menu Button */}
-        <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? (
-            <X className="w-6 h-6 text-black" />
-          ) : (
-            <Menu className="w-6 h-6 text-black" />
-          )}
-        </button>
       </div>
     </nav>
   );
