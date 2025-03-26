@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import fitz  # PyMuPDF for PDFs
-import pytesseract
 from PIL import Image
 import google.generativeai as genai
 import chromadb
@@ -21,6 +20,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 collection = chroma_client.get_or_create_collection(name="document_embeddings")
 
+
 ### 📌 TEXT EXTRACTION FUNCTIONS
 def extract_text_from_pdf(pdf_file):
     """Extract text from a PDF file."""
@@ -33,6 +33,7 @@ def extract_text_from_pdf(pdf_file):
         return str(e)
     return text.strip()
 
+
 def extract_text_from_url(url):
     """Extract text from a web page using BeautifulSoup."""
     headers = {
@@ -42,14 +43,16 @@ def extract_text_from_url(url):
     }
 
     try:
-        response = requests.get(url, headers = headers)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         return soup.get_text()
     except Exception as e:
         return str(e)
 
+
 ### 📌 DOCUMENT STORAGE IN CHROMADB
+
 
 def store_documents_in_chromadb(text_list):
     """Store document chunks into ChromaDB."""
@@ -58,7 +61,7 @@ def store_documents_in_chromadb(text_list):
 
     for text in text_list:
         chunks = text_splitter.split_text(text)
-        
+
         # Ensure chunks are within the size limit
         for chunk in chunks:
             if len(chunk) > 500:
@@ -71,6 +74,7 @@ def store_documents_in_chromadb(text_list):
     for i, (chunk, vector) in enumerate(zip(all_chunks, vectors)):
         collection.add(ids=[str(i)], embeddings=[vector], metadatas=[{"text": chunk}])
 
+
 ### 📌 AI RESPONSE GENERATION
 def retrieve_context(query):
     """Retrieve relevant text chunks from stored documents."""
@@ -79,10 +83,12 @@ def retrieve_context(query):
     results = collection.query(query_embeddings=[query_vector], n_results=3)
     return [res["text"] for res in results["metadatas"][0]]
 
+
 def answer_question(query, context):
     """Generate an AI-powered answer with Gemini."""
     model = genai.GenerativeModel("gemini-2.0-flash")
-    response = model.generate_content(f'''Context: {context}  
+    response = model.generate_content(
+        f"""Context: {context}  
 Question: {query}  
 
 Instructions:  
@@ -93,8 +99,10 @@ Instructions:
 - Do **not** add any information outside the provided context.  
 - Keep responses **factually accurate, simple, and to the point**.  
 - If the context does not contain enough information, explicitly state: "Insufficient data in the provided text."
-''')
+"""
+    )
     return response.text if response.text else "No response from AI."
+
 
 ### 📌 MINDMAP GENERATION
 def create_mindmap_markdown(text):
@@ -111,7 +119,9 @@ def create_mindmap_markdown(text):
     except Exception as e:
         return str(e)
 
+
 ### 📌 API ROUTES
+
 
 @app.route("/api/process_documents", methods=["POST"])
 def process_documents():
@@ -131,12 +141,16 @@ def process_documents():
         if text_list:
             print(text_list)
             store_documents_in_chromadb(text_list)
-            return jsonify({"message": "Documents processed and stored successfully!"}), 200
+            return (
+                jsonify({"message": "Documents processed and stored successfully!"}),
+                200,
+            )
         else:
             return jsonify({"error": "No valid documents provided."}), 400
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/ask_question", methods=["POST"])
 def ask_question():
@@ -155,6 +169,7 @@ def ask_question():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/generate_mindmap", methods=["POST"])
 def generate_mindmap():
     """Endpoint to generate a mindmap from processed documents."""
@@ -171,5 +186,9 @@ def generate_mindmap():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(
+        debug=True,
+        use_reloader=False,
+    )
