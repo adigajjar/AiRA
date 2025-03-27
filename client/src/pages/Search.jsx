@@ -1,30 +1,50 @@
 import React, { useState } from "react";
 import { FaSearch } from "react-icons/fa";
-import axios from "axios";
+import Loader from "../components/Loader";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [score, setScore] = useState(0);
+  const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearched, setIsSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [isPlaceholderVisible, setIsPlaceholderVisible] = useState(true);
 
   const handleSearch = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent form default submission
+    if (!searchQuery.trim()) return;
 
+    console.log("Search Query:", searchQuery);
+    setLoading(true);
+    setIsSearched(true);
     try {
-      const response = await axios.post("http://localhost:5000/search", {
-        query: searchQuery,
+      const response = await fetch("http://127.0.0.1:5000/api/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: searchQuery }),
       });
-      setSearchResults(response.data.results);
-      setIsSearched(true);
+
+      const data = await response.json();
+      console.log("Search Results:", data);
+
+      setSearchResults(data.results);
+      setScore(data.score);
+      setQuery(data.query);
     } catch (error) {
-      console.error("Search error:", error);
+      console.error("Error fetching search results:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div
-      className={`bg-[#FFEBCD] flex flex-col items-center ${
-        isSearched ? "pt-10" : "justify-center h-[90.1vh]"
+      className={`bg-[#FFEBCD] flex flex-col items-center min-h-[calc(100vh-75px)] ${
+        isSearched ? "pt-10" : "justify-center"
       }`}
     >
       {!isSearched && (
@@ -43,7 +63,7 @@ const Search = () => {
         </div>
       )}
 
-      {/* Search Bar - Always Visible */}
+      {/* Search Bar */}
       <form onSubmit={handleSearch} className="w-full max-w-[600px] px-4">
         <div className="relative">
           <div
@@ -57,7 +77,9 @@ const Search = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search papers..."
+                onFocus={() => setIsPlaceholderVisible(false)}
+                onBlur={() => setIsPlaceholderVisible(searchQuery === "")}
+                placeholder={isPlaceholderVisible ? "Search papers..." : ""}
                 className="w-full py-3 pl-12 pr-4 text-xl text-black placeholder-gray-500 bg-transparent rounded-full outline-none font-medium"
                 style={{
                   boxShadow:
@@ -71,34 +93,43 @@ const Search = () => {
       </form>
 
       {/* Search Results */}
-      {isSearched && (
-        <div className="w-full max-w-4xl mt-8 px-4">
-          <h2 className="text-2xl font-bold mb-6">Search Results</h2>
-          {searchResults.map((result, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-md p-6 mb-4 hover:shadow-lg transition-shadow"
-            >
-              <h3 className="text-xl font-semibold text-black mb-2">
-                {result.title}
-              </h3>
-              <p className="text-gray-600 mb-4">{result.abstract}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  Authors: {result.authors}
-                </span>
-                <a
-                  href={result.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  Read Paper
-                </a>
-              </div>
+      {loading ? (
+        <Loader />
+      ) : (
+        isSearched && (
+          <div className="w-full max-w-4xl mt-8 px-4">
+            <div>
+              <p>Score: {score}</p>
+              <p>Query: {query}</p>
             </div>
-          ))}
-        </div>
+            <h2 className="text-2xl font-bold mb-6">✨Discoveries</h2>
+            {searchResults.length > 0 ? (
+              searchResults.map((result, index) => (
+                <div key={index} className="custom-box p-6 mb-6">
+                  <h3 className="text-xl font-semibold text-black mb-2">
+                    {result.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4">{result.abstract}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">
+                      Citations: {result.citationCount}
+                    </span>
+                    <a
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Read Paper
+                    </a>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-lg">No results found.</p>
+            )}
+          </div>
+        )
       )}
     </div>
   );
